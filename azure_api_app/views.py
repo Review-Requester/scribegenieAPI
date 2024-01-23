@@ -14,12 +14,17 @@ from azure_api_app.assemblyai_operation import AssemblyAIOperation
 # From utils
 from azure_api_app.utils import handle_exceptions
 
+# Firebase Authorization
+from azure_api_app.firebase_auth import FirebaseAuthorization
+
 # Other
 import os
 import json
 
 
 class FineTuneModelCompletion(APIView):
+
+    permission_classes = [FirebaseAuthorization]
 
     @handle_exceptions()
     def post(self, request, *args, **kwargs):
@@ -42,6 +47,8 @@ class FineTuneModelCompletion(APIView):
 
 
 class AssemblyAIAudioToText(APIView):
+
+    permission_classes = [FirebaseAuthorization]
 
     @handle_exceptions()
     def post(self, request, *args, **kwargs):
@@ -93,6 +100,8 @@ class AssemblyAIAudioToText(APIView):
 
 
 class AssemblyAIAudioToTextStatus(APIView):
+    
+    permission_classes = [FirebaseAuthorization]
 
     @handle_exceptions()
     def get(self, request, transcript_id=None, *args, **kwargs):
@@ -135,6 +144,8 @@ class AssemblyAIAudioToTextStatus(APIView):
 
 
 class ChatBotCompletion(APIView):
+
+    permission_classes = [FirebaseAuthorization]
 
     @handle_exceptions()
     def post(self, request, *args, **kwargs):
