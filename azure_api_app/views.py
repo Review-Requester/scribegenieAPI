@@ -113,10 +113,25 @@ class AssemblyAIAudioToTextStatus(APIView):
             return Response({'status':'error', 'message': message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         if transcription_status == 'completed':
-            response_data = {'status': 'success', 'data': transcription_result['text']}
+            utterances = self.sequences(transcription_result.get('utterances', []))
+            transcription_data = utterances or transcription_result.get('text', '')
+            response_data = {'status': 'success', 'data': transcription_data}
             return Response(response_data, status=status.HTTP_200_OK)
 
         return Response(transcription_result, status=status.HTTP_400_BAD_REQUEST)
+
+
+    @staticmethod
+    def sequences(utterance_data):
+        try:
+            response_list = sorted(utterance_data, key=lambda x: x['start'])
+            transcript = ''
+            for e in response_list:
+                # transcript += f"{e['text']}\n\n"
+                transcript += f"Person {e['speaker']}: {e['text']}\n\n"
+            return transcript
+        except:
+            return []
 
 
 class ChatBotCompletion(APIView):
