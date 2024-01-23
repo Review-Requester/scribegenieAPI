@@ -24,12 +24,13 @@ class FineTuneModelCompletion(APIView):
     def post(self, request, *args, **kwargs):
         # Get Data
         user_message = request.data.get('message', '').strip()
-        if not user_message:
-            return Response({'status': 'error', 'message': "User Message Not Found..!"}, status=status.HTTP_400_BAD_REQUEST)
+        system_prompt = request.data.get('system_prompt', '').strip()
+        if (not user_message) or (not system_prompt):
+            return Response({'status': 'error', 'message': "User message or system prompt not found..!"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Call GPT API to get response
         open_ai_object = OpenAIOperation()
-        res_status, response = open_ai_object.generate_gpt_response(user_message)
+        res_status, response = open_ai_object.generate_gpt_response(system_prompt, user_message)
 
         # Return response
         if not res_status:
