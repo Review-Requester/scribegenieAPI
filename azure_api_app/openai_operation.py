@@ -23,21 +23,25 @@ class OpenAIOperation:
         self.headers = headers
 
 
-    def generate_gpt_response(self, system_prompt, user_prompt):
+    def generate_gpt_response(self, system_prompt=None, user_prompt=None, payload=False, is_only_msg=False):
         try:
-            payload = json.dumps({
-                "model": self.BASE_MODEL,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-            })
+            if system_prompt and user_prompt:
+                payload = json.dumps({
+                    "model": self.BASE_MODEL,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                })
+            
+            if not payload:
+                return False, False
 
             response = requests.request("POST", self.COMPLETION_URL, headers=self.headers, data=payload)
             response_data = response.json()
 
             if response.status_code == 200:
-                assistant_message = response_data['choices'][0]['message']['content']
+                assistant_message = response_data['choices'][0]['message']['content'] if is_only_msg else response_data
                 return True, assistant_message
             else:
                 return False, response_data

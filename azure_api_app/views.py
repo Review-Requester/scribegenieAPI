@@ -16,6 +16,7 @@ from azure_api_app.utils import handle_exceptions
 
 # Other
 import os
+import json
 
 
 class FineTuneModelCompletion(APIView):
@@ -30,7 +31,7 @@ class FineTuneModelCompletion(APIView):
 
         # Call GPT API to get response
         open_ai_object = OpenAIOperation()
-        res_status, response = open_ai_object.generate_gpt_response(system_prompt, user_message)
+        res_status, response = open_ai_object.generate_gpt_response(system_prompt, user_message, is_only_msg=True)
 
         # Return response
         if not res_status:
@@ -116,3 +117,36 @@ class AssemblyAIAudioToTextStatus(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
 
         return Response(transcription_result, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChatBotCompletion(APIView):
+
+    @handle_exceptions()
+    def post(self, request, *args, **kwargs):
+        # Get Data
+        model = request.data.get('model', '').strip() # Required
+        messages = request.data.get('messages', '') # Required
+        temperature = request.data.get('temperature', 0.8)
+        presence_penalty = request.data.get('presence_penalty', 0)
+
+        # Validation
+        if (not model) or (not messages):
+            return Response({'status': 'error', 'message': "Model or user message not found..!"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Call GPT API to get response
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "presence_penalty": presence_penalty,
+        }
+        payload = json.dumps(payload, indent=2)
+        open_ai_object = OpenAIOperation()
+        res_status, response = open_ai_object.generate_gpt_response(payload=payload)
+
+        # Return response
+        if not res_status:
+            return Response({'status': 'error', 'message': response or "Something Went Wrong..! Response Not Generated..!"}, 
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(response, status=status.HTTP_200_OK)
