@@ -151,9 +151,9 @@ class ChatBotCompletion(APIView):
     def post(self, request, *args, **kwargs):
         # Get Data
         model = request.data.get('model', '').strip() # Required
-        messages = request.data.get('messages', '') # Required
-        temperature = request.data.get('temperature', 0.8)
-        presence_penalty = request.data.get('presence_penalty', 0)
+        messages = json.loads(request.data.get('messages', []))  # Required
+        temperature = float(request.data.get('temperature', 0.8))
+        presence_penalty = float(request.data.get('presence_penalty', 0))
 
         # Validation
         if (not model) or (not messages):
