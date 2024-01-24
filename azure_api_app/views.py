@@ -116,6 +116,9 @@ class AssemblyAIAudioToTextStatus(APIView):
         transcription_result = assembly_object.polling_transcript(transcript_id)
         transcription_status = transcription_result.get('status', None)
 
+        if not transcription_status:
+            return Response({'status':'error', 'message': "Something went wrong..!"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         # Return response
         if transcription_status == 'error':
             message = f"Transcription failed: {transcription_result['error']}"
@@ -124,10 +127,10 @@ class AssemblyAIAudioToTextStatus(APIView):
         if transcription_status == 'completed':
             utterances = self.sequences(transcription_result.get('utterances', []))
             transcription_data = utterances or transcription_result.get('text', '')
-            response_data = {'status': 'success', 'data': transcription_data}
+            response_data = {'status': 'completed', 'data': transcription_data}
             return Response(response_data, status=status.HTTP_200_OK)
 
-        return Response(transcription_result, status=status.HTTP_400_BAD_REQUEST)
+        return Response(transcription_result, status=status.HTTP_200_OK)
 
 
     @staticmethod
