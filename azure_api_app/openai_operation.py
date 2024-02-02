@@ -7,8 +7,8 @@ load_dotenv()
 
 class OpenAIOperation:
 
-    BASE_MODEL_FILE = "file-DllSkQR8i9MYQCg77H6JS8wE"
-    BASE_MODEL = "ft:gpt-3.5-turbo-1106:urbahealth-llc:one-tune-def:8egMtqnt"
+    BASE_MODEL_FILE = "file-BvXCucNfZ6gsg4qr4MwaK5cH"
+    BASE_MODEL = "ft:gpt-3.5-turbo-1106:newgate-software-inc:customer-ai-model:8ngwFYGQ"
     
     # Open ai APIs
     COMPLETION_URL = "https://api.openai.com/v1/chat/completions"
@@ -49,3 +49,41 @@ class OpenAIOperation:
             return False, False
 
         
+    def generate_scribe_simple_response(self, user_message):
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+        system_prompt_file = os.path.join(current_directory, "system_prompt/system_prompt.json")
+
+        if not os.path.isfile(system_prompt_file):
+            return False, {'status': 'error', 'message': 'System prompt file not found.'}
+
+        scribe_simple_data = []
+
+        try:
+            with open(system_prompt_file, 'r') as file:
+                prompts_data_list = json.load(file)
+
+                for prompt_data in prompts_data_list:
+                    # Get system prompt data
+                    title = prompt_data.get("title", None)
+                    system_prompt = prompt_data.get("system_prompt", None)
+                    gpt_status, gpt_response = self.generate_gpt_response(system_prompt=system_prompt, user_prompt=user_message, is_only_msg=True)
+
+                    # Validate gpt response
+                    if not gpt_status:
+                        return False, {'status': 'error', 'message': f'Something went wrong. Do not generate response for {title}. Try again in a while..!'}
+
+                    # Create GPT response JSON to store in firebase
+                    gpt_data = {
+                        "title": title,
+                        "body_text": gpt_response,
+                    }
+
+                    scribe_simple_data.append(gpt_data)
+            
+            if not scribe_simple_data:
+                return False, {'status': 'error', 'message': 'No data generated for system prompts.'}
+
+            return True, scribe_simple_data
+
+        except Exception as e:
+            return False, {'status': 'error', 'message': f'Error loading system prompts: {str(e)}'}

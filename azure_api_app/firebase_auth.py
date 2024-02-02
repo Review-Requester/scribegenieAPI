@@ -23,22 +23,31 @@ def initialize_firestore_client():
         initialize_app(cred)
         firebase_initialized = True
     
-    return True
+    return firestore.client()
 
 
 class FirebaseAuthorization(permissions.BasePermission):
 
-    def has_permission(self, request, view):
+    def authenticate(self, request):
         try:
             auth_header = request.headers.get('Authorization')
             if not auth_header or not auth_header.startswith('Bearer '):
                 return None
 
             token = auth_header.split(' ')[-1]
-            initialize_firestore_client()
+            db_obj = initialize_firestore_client()
 
             decoded_token = auth.verify_id_token(token)
-            user = auth.get_user(decoded_token['uid'])
-            return user, None
+            decoded_user_id = decoded_token['uid']
+            user = auth.get_user(decoded_user_id)
+
+            request.user_id = decoded_user_id
+            request.db = db_obj
+            return user
         except Exception as e:
             raise AuthenticationFailed(f"Token verification failed: {str(e)}")
+
+    def has_permission(self, request, view):
+        user = self.authenticate(request)
+        request.user = user  # Set the authenticated user in the request
+        return user is not None
