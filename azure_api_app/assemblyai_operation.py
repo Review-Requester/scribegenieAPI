@@ -3,11 +3,7 @@ import json
 import requests
 from dotenv import load_dotenv
 
-# From utils
-from azure_api_app.utils import handle_exceptions
-
 load_dotenv()
-
 
 class AssemblyAIOperation:
 
@@ -24,34 +20,38 @@ class AssemblyAIOperation:
         self.headers = headers
 
 
-    @handle_exceptions(is_status=True)
     def upload_file(self, file_path):
-        audio_file = open(file_path, "rb") 
-    
-        response = requests.post(self.UPLOAD_URL, headers=self.headers, data=audio_file)
+        try:
+            audio_file = open(file_path, "rb") 
+        
+            response = requests.post(self.UPLOAD_URL, headers=self.headers, data=audio_file)
 
-        response_data = False
-        if response.status_code == 200:
-            response_data = response.json()
-        return response_data
+            response_data = False
+            if response.status_code == 200:
+                response_data = response.json()
+            return response_data
+        except:
+            return False
     
 
-    @handle_exceptions(is_status=True)
     def transcribe_file(self, upload_url):
-        data = {
-            "audio_url": upload_url, 
-            "language_code": "en_us",
-            "disfluencies": True,
-            "speaker_labels": True,
-            "punctuate": True,
-        }
+        try:
+            data = {
+                "audio_url": upload_url, 
+                "language_code": "en_us",
+                "disfluencies": True,
+                "speaker_labels": True,
+                "punctuate": True,
+            }
 
-        transcript_response = requests.post(self.TRANSCRIPT_URL, json=data, headers=self.headers)
+            transcript_response = requests.post(self.TRANSCRIPT_URL, json=data, headers=self.headers)
 
-        response_data = False
-        if transcript_response.status_code == 200:
-            response_data = transcript_response.json()
-        return response_data
+            response_data = False
+            if transcript_response.status_code == 200:
+                response_data = transcript_response.json()
+            return response_data
+        except:
+            return False
     
 
     def polling_transcript(self, transcript_id):

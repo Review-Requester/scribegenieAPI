@@ -70,7 +70,8 @@ class OpenAIOperation:
 
                     # Validate gpt response
                     if not gpt_status:
-                        return False, {'status': 'error', 'message': f'Something went wrong. Do not generate response for {title}. Try again in a while..!'}
+                        gpt_response = "We’re sorry, something has gone wrong. Please try later."
+                        # return False, {'status': 'error', 'message': f'Something went wrong. Do not generate response for {title}. Try again in a while..!'}
 
                     # Create GPT response JSON to store in firebase
                     gpt_data = {

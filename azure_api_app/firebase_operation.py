@@ -1,9 +1,6 @@
 # Firestore to work with firebase
 from firebase_admin import credentials, firestore, initialize_app, auth
 
-# From utils
-from azure_api_app.utils import handle_exceptions
-
 # Other
 import os
 
@@ -28,12 +25,14 @@ class FirebaseOperations:
         self.db = firebase_db
         
 
-    @handle_exceptions(is_status=True)
     def create_user_history(self, data, user_id):
-        collection_name_1 = "users"
-        collection_name_2 = "history"    
+        try:
+            collection_name_1 = "users"
+            collection_name_2 = "history"    
 
-        self.db.collection(collection_name_1).document(user_id)\
-                .collection(collection_name_2).document().create(data)
-        
-        return True
+            self.db.collection(collection_name_1).document(user_id)\
+                    .collection(collection_name_2).document().create(data)
+            
+            return True
+        except:
+            return False
