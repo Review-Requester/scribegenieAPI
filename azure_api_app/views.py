@@ -15,6 +15,7 @@ from azure_api_app.firebase_auth import FirebaseAuthorization
 
 # Other
 import os
+import sys
 import json
 import subprocess
 
@@ -46,6 +47,10 @@ class FineTuneModelOperation(APIView):
         file_path = self.save_file(file)
         if not file_path:
             return Response({'error': 'Something Went Wrong..! Please, Try Again..!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        env_path = "/root/scribe_engine_api/env" 
+        os.environ["PATH"] = f"{env_path}/bin:{os.environ['PATH']}"
+        sys.path.append(env_path)
 
         # Call your background task using subprocess
         subprocess.Popen(['python3', 'azure_api_app/task.py', f'{file_path},{patient_name},{user_id}'])
