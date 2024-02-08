@@ -4,6 +4,9 @@ from utils import handle_exceptions
 # From assemblyai_operation
 from assemblyai_operation import AssemblyAIOperation
 
+# From whisperai_operation
+from whisperai_operation import WhisperAIOperation
+
 # From openai_operation
 from openai_operation import OpenAIOperation
 
@@ -72,7 +75,7 @@ class TranscriptGPTOperation:
 
 
     def perform_operation(self):
-        is_transcript_generated = self.generate_transcript()
+        is_transcript_generated = self.generate_transcript_using_whisper_ai()
         if not is_transcript_generated:
             self.firebase_operation()
             return True
@@ -86,6 +89,24 @@ class TranscriptGPTOperation:
         fb_operation = self.firebase_operation()
         return fb_operation
 
+    @handle_exceptions(is_status=True)
+    def generate_transcript_using_whisper_ai(self):
+        """Perform Audio To Text Translation using whisper AI"""
+
+        # Create Whisper AI object
+        assembly_object = WhisperAIOperation()
+
+        # Generate transcript
+        transcript_data = assembly_object.generate_transcription(self.file_path)
+         
+        # Delete temporary file after completing all operations
+        self.delete_temp_file(self.file_path)
+        
+        if not transcript_data:
+            return False
+
+        self.transcription_data = transcript_data
+        return True
 
     @handle_exceptions(is_status=True)
     def generate_transcript(self):
