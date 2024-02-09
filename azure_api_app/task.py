@@ -105,7 +105,9 @@ class TranscriptGPTOperation:
         if not transcript_data:
             return False
 
-        self.transcription_data = transcript_data
+        sorted_transcript_data = sorted(transcript_data, key=lambda x: x["id"])
+        formatted_transcript_data = '\n'.join(item["text"].strip() for item in sorted_transcript_data)
+        self.transcription_data = formatted_transcript_data
         return True
 
     @handle_exceptions(is_status=True)

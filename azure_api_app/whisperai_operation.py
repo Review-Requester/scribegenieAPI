@@ -17,11 +17,13 @@ class WhisperAIOperation:
                                 file=audio_file,
                                 response_format='verbose_json',
                                 language='en',
-                                temperature='0.3',
+                                temperature=0.3,
                                 prompt='correct all pronunciation, grammar, and spelling mistakes.'
                             )
             if transcript:
-                return transcript.text
+                # return transcript.text
+                return transcript.segments
+
             return False
         except:
             return False
