@@ -15,7 +15,8 @@ def handle_exceptions(is_status=False):
                 
                 response = {
                     "status": "error",
-                    "message": "Something went wrong..!"
+                    "message": "Something went wrong..!",
+                    "error": str(e),
                 }
                 return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
