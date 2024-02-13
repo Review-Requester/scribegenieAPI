@@ -89,7 +89,7 @@ class TranscriptGPTOperation:
         fb_operation = self.firebase_operation()
         return fb_operation
 
-    @handle_exceptions(is_status=True)
+    # @handle_exceptions(is_status=True)
     def generate_transcript_using_whisper_ai(self):
         """Perform Audio To Text Translation using whisper AI"""
 
