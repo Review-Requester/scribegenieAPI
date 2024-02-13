@@ -18,7 +18,20 @@ import os
 import sys
 import time
 import json
+import logging
 import datetime
+from pathlib import Path
+
+
+# Configure the logging settings
+BASE_DIR = Path(__file__).resolve().parent.parent
+logger = logging.getLogger(__name__)
+log_file_path = f"{BASE_DIR}/error.log"  
+
+logging.basicConfig(
+    filename=log_file_path,
+    level=logging.ERROR,  
+)
 
 
 class TranscriptGPTOperation:
@@ -89,7 +102,7 @@ class TranscriptGPTOperation:
         fb_operation = self.firebase_operation()
         return fb_operation
 
-    # @handle_exceptions(is_status=True)
+    @handle_exceptions(is_status=True)
     def generate_transcript_using_whisper_ai(self):
         """Perform Audio To Text Translation using whisper AI"""
 

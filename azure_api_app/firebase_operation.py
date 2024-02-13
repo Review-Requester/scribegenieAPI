@@ -3,6 +3,9 @@ from firebase_admin import credentials, firestore, initialize_app, auth
 
 # Other
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Global variables
 firebase_initialized = False
@@ -34,5 +37,6 @@ class FirebaseOperations:
                     .collection(collection_name_2).document().create(data)
             
             return True
-        except:
+        except Exception as e:
+            logger.error('\n--------------- ERROR (firebase) ---------------\n' + str(e) + '\n--------------------------------------------------------------\n')
             return False

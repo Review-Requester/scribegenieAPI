@@ -2,6 +2,10 @@
 from rest_framework.response import Response
 from rest_framework import status
 
+# Logger
+import logging
+logger = logging.getLogger(__name__)
+
 
 def handle_exceptions(is_status=False):
 
@@ -10,6 +14,7 @@ def handle_exceptions(is_status=False):
             try:
                 return view_func(*args, **kwargs)
             except Exception as e:
+                logger.error('\n--------------------- ERROR ---------------------\n' + str(e) + '\n-------------------------------------------------\n')
                 if is_status:
                     return False
                 
