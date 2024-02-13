@@ -1,7 +1,11 @@
-import os
 from openai import OpenAI
-import logging
 
+# Other
+import os
+from datetime import datetime
+
+# Logger
+import logging
 logger = logging.getLogger(__name__)
 
 class WhisperAIOperation:
@@ -28,7 +32,7 @@ class WhisperAIOperation:
                 return transcript.segments
             return False
         except Exception as e:
-            logger.error('\n--------------------- ERROR (whisper ai) ---------------------\n' + str(e) + '\n--------------------------------------------------------------\n')
+            logger.error(f'\n--------------------- ERROR (whisper ai) ---------------------\n{datetime.now()}\n{str(e)}\n--------------------------------------------------------------\n')
             return False
     
 

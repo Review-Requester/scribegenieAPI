@@ -2,6 +2,9 @@
 from rest_framework.response import Response
 from rest_framework import status
 
+# Other
+from datetime import datetime
+
 # Logger
 import logging
 logger = logging.getLogger(__name__)
@@ -14,7 +17,7 @@ def handle_exceptions(is_status=False):
             try:
                 return view_func(*args, **kwargs)
             except Exception as e:
-                logger.error('\n--------------------- ERROR ---------------------\n' + str(e) + '\n-------------------------------------------------\n')
+                logger.error(f'\n--------------------- ERROR ---------------------\n{datetime.now()}\n{str(e)}\n-------------------------------------------------\n')
                 if is_status:
                     return False
                 

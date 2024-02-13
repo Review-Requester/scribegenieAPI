@@ -113,7 +113,7 @@ class TranscriptGPTOperation:
         transcript_data = assembly_object.generate_transcription(self.file_path)
          
         # Delete temporary file after completing all operations
-        self.delete_temp_file(self.file_path)
+        # self.delete_temp_file(self.file_path)
         
         if not transcript_data:
             return False

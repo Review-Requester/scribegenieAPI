@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 
 
@@ -50,7 +51,7 @@ class OpenAIOperation:
             else:
                 return False, response_data
         except Exception as e:
-            logger.error('\n------------- ERROR (generate gpt response) -------------\n' + str(e) + '\n--------------------------------------------------------------\n')
+            logger.error(f'\n------------- ERROR (generate gpt response) -------------\n{datetime.now()}\n{str(e)}\n--------------------------------------------------------------\n')
             return False, False
 
         
@@ -92,5 +93,5 @@ class OpenAIOperation:
             return True, scribe_simple_data
 
         except Exception as e:
-            logger.error('\n----------- ERROR (generate scribe simple response) -----------\n' + str(e) + '\n--------------------------------------------------------------\n')
+            logger.error(f'\n----------- ERROR (generate scribe simple response) -----------\n{datetime.now()}\n{str(e)}\n--------------------------------------------------------------\n')
             return False, {'status': 'error', 'message': f'Error loading system prompts: {str(e)}'}

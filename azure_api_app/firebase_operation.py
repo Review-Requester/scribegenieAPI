@@ -4,6 +4,7 @@ from firebase_admin import credentials, firestore, initialize_app, auth
 # Other
 import os
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -38,5 +39,5 @@ class FirebaseOperations:
             
             return True
         except Exception as e:
-            logger.error('\n--------------- ERROR (firebase) ---------------\n' + str(e) + '\n--------------------------------------------------------------\n')
+            logger.error(f'\n--------------- ERROR (firebase) ---------------\n{datetime.now()}\n{str(e)}\n--------------------------------------------------------------\n')
             return False
