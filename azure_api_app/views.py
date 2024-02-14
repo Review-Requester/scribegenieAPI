@@ -18,6 +18,7 @@ import os
 import sys
 import json
 import subprocess
+from datetime import datetime
 
 
 class FineTuneModelOperation(APIView):
@@ -60,9 +61,24 @@ class FineTuneModelOperation(APIView):
 
     @handle_exceptions(is_status=True)
     def save_file(self, file):
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        original_filename = file.name
+
         current_directory = os.path.dirname(os.path.realpath(__file__))
-        file_name = f"audio_files/{file.name}" 
-        file_path = os.path.join(current_directory, file_name)
+        audio_folder = os.path.join(current_directory, "audio_files")
+        os.makedirs(audio_folder, exist_ok=True)
+
+        base_filename = f"{timestamp}_{original_filename}"
+
+        counter = 1
+        while True:
+            new_filename = f"{base_filename}" if counter == 1 else f"{base_filename}_{counter}"
+            file_path = os.path.join(audio_folder, new_filename)
+            
+            if not os.path.exists(file_path):
+                break
+            
+            counter += 1
 
         with open(file_path, 'wb') as destination:
             for chunk in file.chunks():
