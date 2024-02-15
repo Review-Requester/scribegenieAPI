@@ -12,8 +12,10 @@ load_dotenv()
 
 class OpenAIOperation:
 
-    BASE_MODEL_FILE = "file-BvXCucNfZ6gsg4qr4MwaK5cH"
-    BASE_MODEL = "ft:gpt-3.5-turbo-1106:newgate-software-inc:customer-ai-model:8ngwFYGQ"
+    # BASE_MODEL_FILE = "file-BvXCucNfZ6gsg4qr4MwaK5cH"
+    # BASE_MODEL = "ft:gpt-3.5-turbo-1106:newgate-software-inc:customer-ai-model:8ngwFYGQ"
+    BASE_MODEL_FILE = "file-xZRv79vGvlK5S7U0cn03piXR"
+    BASE_MODEL = "ft:gpt-3.5-turbo-1106:newgate-software-inc:customer-ai-model:8sSTTY5U"
     
     # Open ai APIs
     COMPLETION_URL = "https://api.openai.com/v1/chat/completions"
