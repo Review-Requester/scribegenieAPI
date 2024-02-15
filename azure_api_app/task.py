@@ -88,7 +88,7 @@ class TranscriptGPTOperation:
 
 
     def perform_operation(self):
-        is_transcript_generated = self.generate_transcript_using_whisper_ai()
+        is_transcript_generated = self.generate_transcript()
         if not is_transcript_generated:
             self.firebase_operation()
             return True
@@ -226,7 +226,7 @@ class TranscriptGPTOperation:
             response_list = sorted(utterance_data, key=lambda x: x['start'])
             transcript = ''
             for e in response_list:
-                transcript += f"{e['text']}\n\n"
+                transcript += f"{e['text']}\n"
                 # transcript += f"Person {e['speaker']}: {e['text']}\n\n"
             return transcript
         except:
