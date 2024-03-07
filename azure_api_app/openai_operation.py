@@ -58,11 +58,12 @@ class OpenAIOperation:
 
         
     def generate_scribe_simple_response(self, user_message):
+        atleast_one_proceed = False
         current_directory = os.path.dirname(os.path.realpath(__file__))
         system_prompt_file = os.path.join(current_directory, "system_prompt/system_prompt.json")
 
         if not os.path.isfile(system_prompt_file):
-            return False, {'status': 'error', 'message': 'System prompt file not found.'}
+            return False, {'status': 'error', 'message': 'System prompt file not found.'}, atleast_one_proceed
 
         scribe_simple_data = []
 
@@ -79,7 +80,9 @@ class OpenAIOperation:
                     # Validate gpt response
                     if not gpt_status:
                         gpt_response = "We’re sorry, something has gone wrong. Please try later."
-                        # return False, {'status': 'error', 'message': f'Something went wrong. Do not generate response for {title}. Try again in a while..!'}
+                        # return False, {'status': 'error', 'message': f'Something went wrong. Do not generate response for {title}. Try again in a while..!'}, atleast_one_proceed
+                    else:
+                        atleast_one_proceed = True
 
                     # Create GPT response JSON to store in firebase
                     gpt_data = {
@@ -90,10 +93,10 @@ class OpenAIOperation:
                     scribe_simple_data.append(gpt_data)
             
             if not scribe_simple_data:
-                return False, {'status': 'error', 'message': 'No data generated for system prompts.'}
+                return False, {'status': 'error', 'message': 'No data generated for system prompts.'}, atleast_one_proceed
 
-            return True, scribe_simple_data
+            return True, scribe_simple_data, atleast_one_proceed
 
         except Exception as e:
             logger.error(f'\n----------- ERROR (generate scribe simple response) -----------\n{datetime.now()}\n{str(e)}\n--------------------------------------------------------------\n')
-            return False, {'status': 'error', 'message': f'Error loading system prompts: {str(e)}'}
+            return False, {'status': 'error', 'message': f'Error loading system prompts: {str(e)}'}, False

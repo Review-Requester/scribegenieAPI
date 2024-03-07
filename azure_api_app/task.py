@@ -47,6 +47,8 @@ class TranscriptGPTOperation:
         self.provider_recommendation = ''
         self.scribe_simple_prompt_data = []
 
+        self.atleast_one_gpt_req_proceed = False
+
         current_directory = os.path.dirname(os.path.realpath(__file__))
         system_prompt_file = os.path.join(current_directory, "system_prompt/system_prompt.json")
 
@@ -176,7 +178,9 @@ class TranscriptGPTOperation:
         """Generate user_prompt for all system prompts like Subjective, Objective etc"""
         # Call GPT API to get response for all system prompts like Subjective, Objective etc
         open_ai_object = OpenAIOperation()
-        res_status, response = open_ai_object.generate_scribe_simple_response(self.transcription_data)
+        res_status, response, atleast_one_gpt_res_proceed = open_ai_object.generate_scribe_simple_response(self.transcription_data)
+
+        self.atleast_one_gpt_req_proceed = atleast_one_gpt_res_proceed
 
         # Return response
         if not res_status:
@@ -212,6 +216,11 @@ class TranscriptGPTOperation:
         fb_status = fb_operation_obj.create_user_history(self.data_to_update_in_db, self.user_id)
         if not fb_status:
             return False
+        
+        if self.transcription_data and self.atleast_one_gpt_req_proceed:
+            is_managed = fb_operation_obj.manage_user_balance(self.data_to_update_in_db, self.user_id)
+            return is_managed
+
         return True
 
 

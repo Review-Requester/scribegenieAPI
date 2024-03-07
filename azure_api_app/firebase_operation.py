@@ -1,5 +1,6 @@
 # Firestore to work with firebase
 from firebase_admin import credentials, firestore, initialize_app, auth
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 # Other
 import os
@@ -36,6 +37,45 @@ class FirebaseOperations:
 
             self.db.collection(collection_name_1).document(user_id)\
                     .collection(collection_name_2).document().create(data)
+            
+            return True
+        except Exception as e:
+            logger.error(f'\n--------------- ERROR (firebase) ---------------\n{datetime.now()}\n{str(e)}\n--------------------------------------------------------------\n')
+            return False
+        
+    def manage_user_balance(self, data, user_id):
+        try:
+            collection_name_1 = "users"  
+            collection_name_2 = "subscriptions"
+
+            # Check if user has active subscriptions
+            active_subscription = self.db.collection(collection_name_1) \
+                .document(user_id) \
+                .collection(collection_name_2) \
+                .where(filter=FieldFilter('status', '==', "active")) \
+                .get()
+
+            # If active subscription then do nothing
+            if active_subscription:
+                return True
+
+            # If not active subscription then update balance or trials
+            user_snapshot =  self.db.collection(collection_name_1).document(user_id).get()
+            user_json = user_snapshot.to_dict()
+
+            add_on_balance = user_json.get('add_on_balance', 0)
+            remaining_trials = user_json.get('remaining_trials', 0)
+
+            if add_on_balance > 1.5:
+                self.db.collection(collection_name_1).document(user_id).update({
+                    'add_on_balance': add_on_balance - 1.5
+                })
+            elif remaining_trials > 0:
+                self.db.collection(collection_name_1).document(user_id).update({
+                    'remaining_trials': remaining_trials - 1
+                })
+            else:
+                return False
             
             return True
         except Exception as e:
