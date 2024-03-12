@@ -12,6 +12,8 @@ from azure_api_app.utils import handle_exceptions
 # Firebase Authorization
 from azure_api_app.firebase_auth import FirebaseAuthorization
 
+# Firebase operations
+from azure_api_app.firebase_operation import FirebaseOperations
 
 # Other
 import os
@@ -27,6 +29,7 @@ class FineTuneModelOperation(APIView):
     Args:
         file: audio file (mp3) -> Required 
         patient_name: name of the patient (string) -> Required
+        visit_type: name of visit_type (string) -> Required
 
     Returns:
         DRF Response
@@ -41,9 +44,16 @@ class FineTuneModelOperation(APIView):
         # Get data
         file = request.FILES.get('file', None)
         patient_name = request.data.get('patient_name', '').strip()
-        if not file or not patient_name:
-            return Response({'error': 'File or patient name not provided'}, status=status.HTTP_400_BAD_REQUEST)
+        visit_type = request.data.get('visit_type', '').strip()
+        if not file or not patient_name or not visit_type:
+            return Response({'error': 'File or patient name or visit type not provided'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Test if visit type exists in firebase or not ?
+        firebase_ope_obj = FirebaseOperations()
+        is_visit_exist = firebase_ope_obj.get_visit_type(visit_type, user_id)
+        if not is_visit_exist:
+            return Response({'error': 'Visit type not exist..!'}, status=status.HTTP_400_BAD_REQUEST)
+
         # Save the file to a temporary location 
         file_path = self.save_file(file)
         if not file_path:
@@ -54,7 +64,7 @@ class FineTuneModelOperation(APIView):
         sys.path.append(env_path)
 
         # Call your background task using subprocess
-        subprocess.Popen(['python3', 'azure_api_app/task.py', f'{file_path},{patient_name},{user_id}'])
+        subprocess.Popen(['python3', 'azure_api_app/task.py', f'{file_path},{patient_name},{user_id},{visit_type}'])
         
         return Response({"status": "success", "message": "Audio uploaded and process started successfully..!"}, status=status.HTTP_200_OK)
 

@@ -81,3 +81,23 @@ class FirebaseOperations:
         except Exception as e:
             logger.error(f'\n--------------- ERROR (firebase) ---------------\n{datetime.now()}\n{str(e)}\n--------------------------------------------------------------\n')
             return False
+        
+    
+    def get_visit_type(self, visit_type, user_id):
+        try:
+            collection_name_1 = "users"  
+            collection_name_2 = "visits"
+
+            # Check if entry with specified visit_type exists in collection ?
+            visit_type_document = self.db.collection(collection_name_1) \
+                .document(user_id) \
+                .collection(collection_name_2) \
+                .where(filter=FieldFilter('name', '==', visit_type)) \
+                .get()
+
+            if visit_type_document:
+                return visit_type_document[-1]
+            return False
+        except Exception as e:
+            logger.error(f'\n--------------- ERROR (firebase) ---------------\n{datetime.now()}\n{str(e)}\n--------------------------------------------------------------\n')
+            return False

@@ -36,46 +36,20 @@ logging.basicConfig(
 
 class TranscriptGPTOperation:
 
-    def __init__(self, file_path, patient_name, user_id):
+    def __init__(self, file_path, patient_name, user_id, visit_type):
         self.file_path = file_path
         self.patient_name = patient_name
         self.user_id = user_id
+        self.visit_type = visit_type
 
         self.transcription_data = ''
         self.clinical_note = []
         self.patient_instruction = ''
         self.provider_recommendation = ''
         self.scribe_simple_prompt_data = []
+        self.system_prompt_data = []
 
-        self.atleast_one_gpt_req_proceed = False
-
-        current_directory = os.path.dirname(os.path.realpath(__file__))
-        system_prompt_file = os.path.join(current_directory, "system_prompt/system_prompt.json")
-
-        if os.path.isfile(system_prompt_file):
-            default_value = "We’re sorry, something has gone wrong. Please try later."
-           
-            with open(system_prompt_file, 'r') as file:
-                prompts_data_list = json.load(file)
-
-                for prompt_data in prompts_data_list:
-                    title = prompt_data.get("title", None)
-                    prompt_note_data = {
-                        "title": title,
-                        "body_text": default_value,
-                    }
-                    
-                    self.scribe_simple_prompt_data.append(prompt_note_data)
-                   
-                    if title == "Patient instruction":
-                        self.patient_instruction = default_value
-                        continue
-
-                    if title == "Provider Recommendation":
-                        self.provider_recommendation = default_value
-                        continue
-
-                    self.clinical_note.append(prompt_note_data)
+        self.gpt_response_generated = False
 
         self.data_to_update_in_db = {
             "clinical_note": self.clinical_note,
@@ -84,12 +58,14 @@ class TranscriptGPTOperation:
             "patient_name": self.patient_name,
             "provider_recommendation": self.provider_recommendation,
             "transcription": self.transcription_data,
-            "visit_name": "SOAP Note",
+            "visit_name": self.visit_type,
             "visit_time": datetime.datetime.now()
         }
 
 
     def perform_operation(self):
+        self.generate_default_clinical_data_for_firebase()
+
         is_transcript_generated = self.generate_transcript()
         if not is_transcript_generated:
             self.firebase_operation()
@@ -103,6 +79,54 @@ class TranscriptGPTOperation:
         self.data_to_update_in_db['is_succeed'] = True
         fb_operation = self.firebase_operation()
         return fb_operation
+
+
+    def generate_default_clinical_data_for_firebase(self):
+        # Retrieve default system prompt information for provider recommandations and patient instructions
+        pr_pi_prompts_data_list = []
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+        system_prompt_file = os.path.join(current_directory, "system_prompt/system_prompt.json")
+        if os.path.isfile(system_prompt_file):
+            with open(system_prompt_file, 'r') as file:
+                pr_pi_prompts_data_list = json.load(file)
+
+        # Retrieve visit type data from firebase
+        fb_operation_obj = FirebaseOperations()
+        visit_type_document = fb_operation_obj.get_visit_type(self.visit_type, self.user_id)
+        visit_type_data = visit_type_document.to_dict() if visit_type_document else {}
+        visit_type_section_data_list = visit_type_data.get('sections', [])
+        
+        self.system_prompt_data = visit_type_section_data_list + pr_pi_prompts_data_list
+
+        # Create default prompt data list to perform add operations with firebase
+        default_value = "We’re sorry, something has gone wrong. Please try later."
+
+        for prompt_data in self.system_prompt_data:
+            title = prompt_data.get("title", None)
+            prompt_note_data = {
+                "title": title,
+                "body_text": default_value,
+            }
+            
+            self.scribe_simple_prompt_data.append(prompt_note_data)
+            
+            if title == "Patient instruction":
+                self.patient_instruction = default_value
+                continue
+
+            if title == "Provider Recommendation":
+                self.provider_recommendation = default_value
+                continue
+
+            self.clinical_note.append(prompt_note_data)
+
+        # Update dict of storing data in firebase
+        self.data_to_update_in_db.update({
+            "clinical_note": self.clinical_note,
+            "patient_instruction": self.patient_instruction,
+            "provider_recommendation": self.provider_recommendation,
+        })
+
 
     @handle_exceptions(is_status=True)
     def generate_transcript_using_whisper_ai(self):
@@ -178,15 +202,14 @@ class TranscriptGPTOperation:
         """Generate user_prompt for all system prompts like Subjective, Objective etc"""
         # Call GPT API to get response for all system prompts like Subjective, Objective etc
         open_ai_object = OpenAIOperation()
-        res_status, response, atleast_one_gpt_res_proceed = open_ai_object.generate_scribe_simple_response(self.transcription_data)
-
-        self.atleast_one_gpt_req_proceed = atleast_one_gpt_res_proceed
+        res_status, response = open_ai_object.generate_scribe_simple_response(self.transcription_data, self.system_prompt_data)
 
         # Return response
         if not res_status:
             return False
         
         self.scribe_simple_prompt_data = response
+        self.gpt_response_generated = True
         return True
 
 
@@ -195,12 +218,12 @@ class TranscriptGPTOperation:
         """Add document in firebase"""
         clinical_note_list = []
         for ss_prompt_data in self.scribe_simple_prompt_data:
-            title = ss_prompt_data.get("title", None)
-            if title == "Patient instruction":
+            title = ss_prompt_data.get("title", "")
+            if title.lower() == "patient instruction":
                 self.patient_instruction = ss_prompt_data.get("body_text", "")
                 continue
             
-            if title == "Provider Recommendation":
+            if title.lower() == "provider recommendation":
                 self.provider_recommendation = ss_prompt_data.get("body_text", "")
                 continue
             
@@ -217,7 +240,7 @@ class TranscriptGPTOperation:
         if not fb_status:
             return False
         
-        if self.transcription_data and self.atleast_one_gpt_req_proceed:
+        if self.transcription_data and self.gpt_response_generated:
             is_managed = fb_operation_obj.manage_user_balance(self.data_to_update_in_db, self.user_id)
             return is_managed
 
@@ -247,9 +270,10 @@ def main():
     audio_file_path = arguments[0]
     patient_name = arguments[1]
     user_id = arguments[2]
+    visit_type = arguments[3]
 
     # Create an instance of TranscriptGPTTask
-    transcript_gpt_task = TranscriptGPTOperation(audio_file_path, patient_name, user_id)
+    transcript_gpt_task = TranscriptGPTOperation(audio_file_path, patient_name, user_id, visit_type)
 
     # Perform the operation
     transcript_gpt_task.perform_operation()
