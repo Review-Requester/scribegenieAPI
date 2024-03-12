@@ -49,7 +49,7 @@ class FineTuneModelOperation(APIView):
             return Response({'error': 'File or patient name or visit type not provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Test if visit type exists in firebase or not ?
-        firebase_ope_obj = FirebaseOperations()
+        firebase_ope_obj = FirebaseOperations(request.db)
         is_visit_exist = firebase_ope_obj.get_visit_type(visit_type, user_id)
         if not is_visit_exist:
             return Response({'error': 'Visit type not exist..!'}, status=status.HTTP_400_BAD_REQUEST)

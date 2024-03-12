@@ -48,6 +48,7 @@ class TranscriptGPTOperation:
         self.provider_recommendation = ''
         self.scribe_simple_prompt_data = []
         self.system_prompt_data = []
+        self.audio_duration = 0
 
         self.gpt_response_generated = False
 
@@ -58,6 +59,7 @@ class TranscriptGPTOperation:
             "patient_name": self.patient_name,
             "provider_recommendation": self.provider_recommendation,
             "transcription": self.transcription_data,
+            "audio_duration": self.audio_duration,
             "visit_name": self.visit_type,
             "visit_time": datetime.datetime.now()
         }
@@ -184,6 +186,7 @@ class TranscriptGPTOperation:
                 return False
 
             if transcription_status == 'completed':
+                self.audio_duration = transcription_result.get("audio_duration", 0)
                 utterances = self.sequences(transcription_result.get('utterances', []))
                 self.transcription_data = utterances or transcription_result.get('text', '')
                 break
@@ -234,6 +237,7 @@ class TranscriptGPTOperation:
         self.data_to_update_in_db['patient_instruction'] = self.patient_instruction
         self.data_to_update_in_db['provider_recommendation'] = self.provider_recommendation
         self.data_to_update_in_db['transcription'] = self.transcription_data
+        self.data_to_update_in_db['audio_duration'] = self.audio_duration
 
         fb_operation_obj = FirebaseOperations()
         fb_status = fb_operation_obj.create_user_history(self.data_to_update_in_db, self.user_id)
