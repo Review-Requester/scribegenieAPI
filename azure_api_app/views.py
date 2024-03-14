@@ -15,6 +15,9 @@ from azure_api_app.firebase_auth import FirebaseAuthorization
 # Firebase operations
 from azure_api_app.firebase_operation import FirebaseOperations
 
+# Stripe Operations
+from azure_api_app.stripe_operation import StripeOperation
+
 # Other
 import os
 import sys
@@ -141,3 +144,59 @@ class ChatBotCompletion(APIView):
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(response, status=status.HTTP_200_OK)
+    
+
+class StripeCustomerData(APIView):
+
+    permission_classes = [FirebaseAuthorization]
+
+    @handle_exceptions()
+    def get(self, request, *args, **kwargs):
+        user_id = request.user_id
+        
+        # Get customer_id of stripe from firebase
+        firebase_ope_obj = FirebaseOperations(request.db)
+        stripe_customer_id = firebase_ope_obj.get_stripe_customer_id(user_id)
+        
+        # Validation for stripe_customer_id
+        if not stripe_customer_id:
+            return Response({'status': 'error', 'message': "Stripe customer id not found ..!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get customer data using stripe_customer_id
+        stripe_operation_obj = StripeOperation()
+        customer_data = stripe_operation_obj.get_customer_data(stripe_customer_id)
+       
+        # Validation for customer data found or not 
+        if not customer_data:
+            return Response({'status': 'error', 'message': "Stripe customer data not found ..!"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Return success response
+        return Response(customer_data, status=status.HTTP_200_OK)
+
+
+class StripeListPaymentMethods(APIView):
+
+    permission_classes = [FirebaseAuthorization]
+
+    @handle_exceptions()
+    def get(self, request, *args, **kwargs):
+        user_id = request.user_id
+        
+        # Get customer_id of stripe from firebase
+        firebase_ope_obj = FirebaseOperations(request.db)
+        stripe_customer_id = firebase_ope_obj.get_stripe_customer_id(user_id)
+        
+        # Validation for stripe_customer_id
+        if not stripe_customer_id:
+            return Response({'status': 'error', 'message': "Stripe customer id not found ..!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get customer data using stripe_customer_id
+        stripe_operation_obj = StripeOperation()
+        payment_method_data = stripe_operation_obj.get_payment_methods(stripe_customer_id)
+       
+        # Validation for customer data found or not 
+        if not payment_method_data:
+            return Response({'status': 'error', 'message': "Stripe customer payment methods not found ..!"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Return success response
+        return Response(payment_method_data, status=status.HTTP_200_OK)
