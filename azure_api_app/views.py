@@ -207,3 +207,64 @@ class StripeListPaymentMethods(APIView):
         
         # Return success response
         return Response(payment_method_data, status=status.HTTP_200_OK)
+
+
+class StripeBillingPortalSessions(APIView):
+
+    permission_classes = [FirebaseAuthorization]
+
+    @handle_exceptions()
+    def get(self, request, *args, **kwargs):
+        user_id = request.user_id
+        
+        # Get customer_id of stripe from firebase
+        firebase_ope_obj = FirebaseOperations(request.db)
+        stripe_customer_id = firebase_ope_obj.get_stripe_customer_id(user_id)
+        
+        # Validation for stripe_customer_id
+        if not stripe_customer_id:
+            return Response({'status': 'error', 'message': "Stripe customer id not found ..!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get customer data using stripe_customer_id
+        stripe_operation_obj = StripeOperation()
+        billing_portal_session_data = stripe_operation_obj.get_billing_portal_session(stripe_customer_id)
+       
+        # Validation for customer data found or not 
+        if not billing_portal_session_data:
+            return Response({'status': 'error', 'message': "Stripe billing portal session not created ..!"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Return success response
+        return Response(billing_portal_session_data, status=status.HTTP_200_OK)
+
+
+class StripeCheckoutSessions(APIView):
+
+    permission_classes = [FirebaseAuthorization]
+
+    @handle_exceptions()
+    def post(self, request, *args, **kwargs):
+        user_id = request.user_id
+        price_id = request.data.get('price_id', '').strip() # Required
+
+        # Validation
+        if not price_id:
+            return Response({'status': 'error', 'message': "Price id not found..!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get customer_id of stripe from firebase
+        firebase_ope_obj = FirebaseOperations(request.db)
+        stripe_customer_id = firebase_ope_obj.get_stripe_customer_id(user_id)
+        
+        # Validation for stripe_customer_id
+        if not stripe_customer_id:
+            return Response({'status': 'error', 'message': "Stripe customer id not found ..!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get checkout session data using stripe_customer_id and price id
+        stripe_operation_obj = StripeOperation()
+        checkout_session_data = stripe_operation_obj.checkout_session(stripe_customer_id, price_id)
+       
+        # Validation for checkout session data found or not 
+        if not checkout_session_data:
+            return Response({'status': 'error', 'message': "Checkout session data not found ..!"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Return success response
+        return Response(checkout_session_data, status=status.HTTP_200_OK)
