@@ -54,7 +54,7 @@ class FirebaseOperations:
 
 
     @handle_exceptions
-    def manage_user_balance(self, data, user_id):
+    def manage_user_balance(self, data, user_id, stripe_obj):
         collection_name_1 = "users"  
         collection_name_2 = "subscriptions"
 
@@ -77,18 +77,80 @@ class FirebaseOperations:
         remaining_trials = user_json.get('remaining_trials', 0)
 
         if add_on_balance > 1.5:
+            # Update add on balance
+            update_add_on_balance = add_on_balance - 1.5
             self.db.collection(collection_name_1).document(user_id).update({
-                'add_on_balance': add_on_balance - 1.5
+                'add_on_balance': update_add_on_balance
             })
-        elif remaining_trials > 0:
+
+            # Update add on balance if auto payment is done
+            auto_payment_status, credit_amount = self.stripe_auto_payment(add_on_balance, user_id, stripe_obj)
+            if auto_payment_status:
+                self.db.collection(collection_name_1).document(user_id).update({
+                    'add_on_balance': update_add_on_balance + float(credit_amount)
+                })
+
+            return True
+        else:
+            # No sufficient balance then update it by auto payment first
+            auto_payment_status, credit_amount = self.stripe_auto_payment(add_on_balance, user_id, stripe_obj)
+            if auto_payment_status:
+                # Add balance by auto payment
+                self.db.collection(collection_name_1).document(user_id).update({
+                    'add_on_balance': add_on_balance + float(credit_amount)
+                })
+                
+                # Retrieve updated balance
+                user_snapshot =  self.db.collection(collection_name_1).document(user_id).get()
+                user_json = user_snapshot.to_dict()
+                new_add_on_balance = user_json.get('add_on_balance', 0)
+
+                # Now minus balance 
+                if new_add_on_balance > 1.5:
+                    new_update_add_on_balance = new_add_on_balance - 1.5
+                    self.db.collection(collection_name_1).document(user_id).update({
+                        'add_on_balance': new_update_add_on_balance
+                    })
+
+                    return True
+
+        if remaining_trials > 0:
             self.db.collection(collection_name_1).document(user_id).update({
                 'remaining_trials': remaining_trials - 1
             })
-        else:
-            return False
+            return True
         
-        return True
-        
+        return False
+    
+
+    def stripe_auto_payment(self, balance, user_id, stripe_obj):
+        try:
+            # Default variable
+            credit_amount = 0
+
+            # Get user data to check if has enable auto pay or not ?
+            collection_name_1 = "users"  
+            user_data = self.db.collection(collection_name_1) \
+                    .document(user_id).get()
+            user_data_dict = user_data.to_dict() if user_data else {}
+
+            # Check auto pay enable or not ?
+            auto_pay_data = user_data_dict.get('auto_pay', {})
+            is_auto_pay_enabled = auto_pay_data.get('enable_auto_pay', False)
+            if is_auto_pay_enabled:
+                threshold = auto_pay_data.get('threshold', 0)
+                if float(balance) <= float(threshold):
+                    credit_amount = auto_pay_data.get('credit', 0)
+                    stripe_customer_id = user_data_dict.get("stripeId", '')
+                    
+                    # Credit amount to stripe
+                    payment_status = stripe_obj.auto_payment(credit_amount, stripe_customer_id)
+                    return payment_status, credit_amount
+            return False, credit_amount
+        except:
+            return False, 0
+
+
 
     @handle_exceptions
     def get_visit_type(self, visit_type, user_id):

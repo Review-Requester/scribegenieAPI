@@ -165,13 +165,20 @@ class StripeCustomerData(APIView):
         # Get customer data using stripe_customer_id
         stripe_operation_obj = StripeOperation()
         customer_data = stripe_operation_obj.get_customer_data(stripe_customer_id)
+        response_data = {'customer_data': customer_data}
        
         # Validation for customer data found or not 
         if not customer_data:
             return Response({'status': 'error', 'message': "Stripe customer data not found ..!"}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Retrieve default payment method data
+        default_payment_method = customer_data.get('invoice_settings', {}).get('default_payment_method', '')
+        if default_payment_method:
+            default_payment_method_data = stripe_operation_obj.retrieve_payment_method_data(default_payment_method)
+            response_data.update({'default_payment_method': default_payment_method_data})
+
         # Return success response
-        return Response(customer_data, status=status.HTTP_200_OK)
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class StripeListPaymentMethods(APIView):

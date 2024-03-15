@@ -13,6 +13,9 @@ from openai_operation import OpenAIOperation
 # Firebase Authorization
 from firebase_operation import FirebaseOperations
 
+# From stripe operations
+from stripe_operation import StripeOperation
+
 # Other
 import os
 import sys
@@ -245,7 +248,8 @@ class TranscriptGPTOperation:
             return False
         
         if self.transcription_data and self.gpt_response_generated:
-            is_managed = fb_operation_obj.manage_user_balance(self.data_to_update_in_db, self.user_id)
+            stripe_obj = StripeOperation()
+            is_managed = fb_operation_obj.manage_user_balance(self.data_to_update_in_db, self.user_id, stripe_obj)
             return is_managed
 
         return True
