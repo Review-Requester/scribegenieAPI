@@ -91,3 +91,8 @@ class StripeOperation:
             cancel_url="https://app.scribegenie.io/cancel",
         )
         return data if data else {}
+    
+    @staticmethod
+    def cancel_subscription(subscription_id):
+        response = stripe.Subscription.cancel(subscription_id)
+        return response if response else {}

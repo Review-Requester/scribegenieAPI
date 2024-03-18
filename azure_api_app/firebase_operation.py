@@ -178,3 +178,19 @@ class FirebaseOperations:
         user_data_dict = user_data.to_dict() if user_data else {}
         customer_id = user_data_dict.get("stripeId", '')
         return customer_id
+    
+
+    @handle_exceptions
+    def check_subscription(self, user_id, subscription_id):
+        collection_name_1 = "users"  
+        collection_name_2 = "subscriptions"
+
+        # Check if user has subscriptions
+        active_subscription = self.db.collection(collection_name_1) \
+            .document(user_id) \
+            .collection(collection_name_2) \
+            .document(subscription_id) \
+            .get()
+        
+        active_subscription_data = active_subscription.to_dict()
+        return True if active_subscription_data else False

@@ -268,3 +268,35 @@ class StripeCheckoutSessions(APIView):
         
         # Return success response
         return Response(checkout_session_data, status=status.HTTP_200_OK)
+    
+
+
+class StripeCancelSubscription(APIView):
+
+    permission_classes = [FirebaseAuthorization]
+
+    @handle_exceptions()
+    def post(self, request, *args, **kwargs):
+        user_id = request.user_id
+        subscription_id = request.data.get('subscription_id', '').strip() # Required
+
+        # Validation
+        if not subscription_id:
+            return Response({'status': 'error', 'message': "Subscription id not found..!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check user has subscription with  provided subscription id ?
+        firebase_ope_obj = FirebaseOperations(request.db)
+        is_active_subscription = firebase_ope_obj.check_subscription(user_id, subscription_id)
+        
+        # Validation for user has subscription with provided id or not
+        if not is_active_subscription:
+            return Response({'status': 'error', 'message': "User has not subscription with this id..!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Cancel customer stripe subscription
+        stripe_operation_obj = StripeOperation()
+        cancel_subscription_data = stripe_operation_obj.cancel_subscription(subscription_id)
+       
+        if cancel_subscription_data and cancel_subscription_data['status'] == 'canceled':
+            return Response({'status': 'success', 'message': 'Subscription successfully canceled..!', 'data': cancel_subscription_data}, status=status.HTTP_200_OK)
+        return Response({'status': 'error', 'message': "Something went wrong..! Can't able to cancel subscription..!", 'data': cancel_subscription_data}, status=status.HTTP_400_BAD_REQUEST)
+        
