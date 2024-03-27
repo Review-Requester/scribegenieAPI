@@ -22,9 +22,11 @@ from azure_api_app.stripe_operation import StripeOperation
 import os
 import sys
 import json
+import logging
 import subprocess
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
 
 class FineTuneModelOperation(APIView):
     """Based on audio file, generate transcript using transcript generate GPT response for different system prompt and make entry in firebase user history.
@@ -49,17 +51,22 @@ class FineTuneModelOperation(APIView):
         patient_name = request.data.get('patient_name', '').strip()
         visit_type = request.data.get('visit_type', '').strip()
         if not file or not patient_name or not visit_type:
+            info_message = f"File: {file}, Patient Name: {patient_name}, Visit Type: {visit_type}"
+            logger.error(f'\n------------- INFO (Data not received) -------------\n{datetime.now()}\n{info_message}\n--------------------------------------------------------------\n')
             return Response({'error': 'File or patient name or visit type not provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Test if visit type exists in firebase or not ?
         firebase_ope_obj = FirebaseOperations(request.db)
         is_visit_exist = firebase_ope_obj.get_visit_type(visit_type, user_id)
         if not is_visit_exist:
+            info_message = f"Visit Type: {visit_type}, User Id: {user_id}"
+            logger.error(f'\n------------- INFO (Visit type not exist) -------------\n{datetime.now()}\n{info_message}\n--------------------------------------------------------------\n')
             return Response({'error': 'Visit type not exist..!'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save the file to a temporary location 
         file_path = self.save_file(file)
         if not file_path:
+            logger.error(f'\n------------- INFO (File not saved) -------------\n{datetime.now()}\n\n--------------------------------------------------------------\n')
             return Response({'error': 'Something Went Wrong..! Please, Try Again..!'}, status=status.HTTP_400_BAD_REQUEST)
 
         env_path = "/root/scribe_engine_api/env" 
